@@ -1,0 +1,26 @@
+Metadata-Version: 2.4
+Name: erpnext_gemini_integration
+Version: 0.1.0
+Summary: Integration of Google's Gemini AI capabilities into ERPNext
+Author: Al-Aswany
+Author-email: user@example.com
+License: MIT
+Classifier: Development Status :: 4 - Beta
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Framework :: Frappe
+Requires-Dist: frappe>=14.0.0
+Requires-Dist: google-generativeai>=0.1.0
+Requires-Dist: python-dotenv>=0.19.0
+Requires-Dist: redis>=4.0.0
+Requires-Dist: cryptography>=37.0.0
+Requires-Dist: pillow>=9.0.0
+Requires-Dist: PyPDF2>=2.0.0
+Requires-Dist: pandas>=1.3.0
+Requires-Dist: matplotlib>=3.5.0
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: license
+Dynamic: requires-dist
+Dynamic: summary

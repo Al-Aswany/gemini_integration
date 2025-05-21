@@ -90,13 +90,13 @@ web_include_js = "/assets/erpnext_gemini_integration/js/chat_widget.js"
 # ---------------
 # Hook on document methods and events
 
-doc_events = {
-    "*": {
-        "on_update": "erpnext_gemini_integration.api.workflow_api.process_document_event",
-        "on_submit": "erpnext_gemini_integration.api.workflow_api.process_document_event",
-        "after_insert": "erpnext_gemini_integration.api.workflow_api.process_document_event",
-    }
-}
+# doc_events = {
+#     "*": {
+#         "on_update": "erpnext_gemini_integration.api.workflow_api.process_document_event",
+#         "on_submit": "erpnext_gemini_integration.api.workflow_api.process_document_event",
+#         "after_insert": "erpnext_gemini_integration.api.workflow_api.process_document_event",
+#     }
+# }
 
 # Scheduled Tasks
 # ---------------

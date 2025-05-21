@@ -18,6 +18,15 @@ class GeminiAuthError(GeminiAPIError):
     """Exception raised when there are authentication issues with Gemini API."""
     pass
 
+class GeminiError(Exception):
+    """Base for all Gemini-related errors."""
+    pass
+
+class GeminiWorkflowError(GeminiError):
+    """
+    Raised when a workflow step fails or returns an unexpected response.
+    """
+    pass
 
 class GeminiContentFilterError(GeminiAPIError):
     """Exception raised when content is filtered by Gemini API safety settings."""
