@@ -1,5 +1,7 @@
 # ERPNext Gemini Integration
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Al-Aswany/gemini_integration)
+
 A comprehensive integration between ERPNext and Google's Gemini AI, providing intelligent automation, context-aware assistance, and workflow optimization.
 
 ## Features
