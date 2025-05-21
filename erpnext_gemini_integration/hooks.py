@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2025, Al-Aswany and contributors
-# For license information, please see license.txt
+from __future__ import unicode_literals
 
 app_name = "erpnext_gemini_integration"
 app_title = "ERPNext Gemini Integration"
 app_publisher = "Al-Aswany"
-app_description = "Integration of Google's Gemini AI capabilities into ERPNext"
+app_description = "Integration between ERPNext and Google's Gemini AI"
 app_icon = "octicon octicon-file-directory"
-app_color = "grey"
-app_email = "user@example.com"
+app_color = "blue"
+app_email = "developer@example.com"
 app_license = "MIT"
 
 # Includes in <head>
@@ -19,8 +18,8 @@ app_include_css = "/assets/erpnext_gemini_integration/css/chat_widget.css"
 app_include_js = "/assets/erpnext_gemini_integration/js/chat_widget.js"
 
 # include js, css files in header of web template
-# web_include_css = "/assets/erpnext_gemini_integration/css/chat_widget.css"
-# web_include_js = "/assets/erpnext_gemini_integration/js/chat_widget.js"
+web_include_css = "/assets/erpnext_gemini_integration/css/chat_widget.css"
+web_include_js = "/assets/erpnext_gemini_integration/js/chat_widget.js"
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "erpnext_gemini_integration/public/scss/website"
@@ -91,13 +90,13 @@ app_include_js = "/assets/erpnext_gemini_integration/js/chat_widget.js"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-#	}
-# }
+doc_events = {
+    "*": {
+        "on_update": "erpnext_gemini_integration.api.workflow_api.process_document_event",
+        "on_submit": "erpnext_gemini_integration.api.workflow_api.process_document_event",
+        "after_insert": "erpnext_gemini_integration.api.workflow_api.process_document_event",
+    }
+}
 
 # Scheduled Tasks
 # ---------------
@@ -148,24 +147,24 @@ app_include_js = "/assets/erpnext_gemini_integration/js/chat_widget.js"
 # --------------------
 
 user_data_fields = [
-	{
-		"doctype": "{doctype_1}",
-		"filter_by": "{filter_by}",
-		"redact_fields": ["{field_1}", "{field_2}"],
-		"partial": 1,
-	},
-	{
-		"doctype": "{doctype_2}",
-		"filter_by": "{filter_by}",
-		"partial": 1,
-	},
-	{
-		"doctype": "{doctype_3}",
-		"strict": False,
-	},
-	{
-		"doctype": "{doctype_4}"
-	}
+    {
+        "doctype": "{doctype}",
+        "filter_by": "{filter_by}",
+        "redact_fields": ["{field1}", "{field2}"],
+        "partial": 1,
+    },
+    {
+        "doctype": "Gemini Conversation",
+        "filter_by": "user",
+        "redact_fields": ["content"],
+        "partial": 1,
+    },
+    {
+        "doctype": "Gemini Message",
+        "filter_by": "user",
+        "redact_fields": ["content"],
+        "partial": 1,
+    },
 ]
 
 # Authentication and authorization
@@ -174,3 +173,28 @@ user_data_fields = [
 # auth_hooks = [
 # 	"erpnext_gemini_integration.auth.validate"
 # ]
+
+# API endpoints
+# ------------
+api_endpoints = [
+    {
+        "endpoint": "erpnext_gemini_integration.api.chat_api.send_message",
+        "methods": ["POST"],
+    },
+    {
+        "endpoint": "erpnext_gemini_integration.api.chat_api.get_conversation",
+        "methods": ["GET"],
+    },
+    {
+        "endpoint": "erpnext_gemini_integration.api.workflow_api.execute_custom_action",
+        "methods": ["POST"],
+    },
+    {
+        "endpoint": "erpnext_gemini_integration.api.workflow_api.get_ai_recommendation",
+        "methods": ["GET", "POST"],
+    },
+    {
+        "endpoint": "erpnext_gemini_integration.api.multimodal_api.process_file",
+        "methods": ["POST"],
+    },
+]

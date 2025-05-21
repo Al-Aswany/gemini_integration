@@ -1,0 +1,92 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2025-05-21 11:52:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "keyword_pattern",
+  "replacement_pattern",
+  "enabled",
+  "applied_to_section",
+  "is_global",
+  "specific_doctypes",
+  "specific_fields"
+ ],
+ "fields": [
+  {
+   "fieldname": "keyword_pattern",
+   "fieldtype": "Data",
+   "label": "Keyword Pattern",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "Regular expression pattern to match sensitive data"
+  },
+  {
+   "fieldname": "replacement_pattern",
+   "fieldtype": "Data",
+   "label": "Replacement Pattern",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "Text to replace matched pattern with (e.g., '[REDACTED]')"
+  },
+  {
+   "default": 1,
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "applied_to_section",
+   "fieldtype": "Section Break",
+   "label": "Applied To"
+  },
+  {
+   "default": 1,
+   "fieldname": "is_global",
+   "fieldtype": "Check",
+   "label": "Apply Globally",
+   "description": "If checked, applies to all doctypes and fields"
+  },
+  {
+   "depends_on": "eval:!doc.is_global",
+   "fieldname": "specific_doctypes",
+   "fieldtype": "Table MultiSelect",
+   "label": "Specific DocTypes",
+   "options": "DocType",
+   "description": "Only apply to these specific doctypes"
+  },
+  {
+   "depends_on": "eval:!doc.is_global",
+   "fieldname": "specific_fields",
+   "fieldtype": "Small Text",
+   "label": "Specific Fields",
+   "description": "Comma-separated list of field names (e.g., 'email,phone,credit_card')"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "modified": "2025-05-21 11:52:00.000000",
+ "modified_by": "Administrator",
+ "module": "ERPNext Gemini Integration",
+ "name": "Gemini Sensitive Keyword",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

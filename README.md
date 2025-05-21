@@ -1,4 +1,4 @@
-# ERPNext Gemini Integration App
+# ERPNext Gemini Integration
 
 A comprehensive integration between ERPNext and Google's Gemini AI, providing intelligent automation, context-aware assistance, and workflow optimization.
 
@@ -10,6 +10,39 @@ A comprehensive integration between ERPNext and Google's Gemini AI, providing in
 - **Workflow Automation**: Automate business processes with AI assistance
 - **Role-Based Security**: Enterprise-grade security and permissions
 - **Audit Logging**: Comprehensive tracking of all AI interactions
+
+## App Structure
+
+This app follows the standard Frappe app structure:
+
+```
+erpnext_gemini_integration/
+├── docs/                           # Documentation files
+├── erpnext_gemini_integration/     # Main app directory
+│   ├── api/                        # API endpoints
+│   ├── config/                     # App configuration
+│   │   ├── desktop.py              # Desktop configuration
+│   │   └── docs.py                 # Documentation configuration
+│   ├── erpnext_gemini_integration/ # Module directory
+│   │   ├── doctype/                # DocTypes directory
+│   │   │   ├── gemini_assistant_settings/
+│   │   │   ├── gemini_conversation/
+│   │   │   ├── gemini_message/
+│   │   │   ├── gemini_audit_log/
+│   │   │   ├── gemini_sensitive_keyword/
+│   │   │   └── gemini_feedback/
+│   ├── gemini/                     # Gemini API integration
+│   ├── public/                     # Static assets
+│   │   ├── css/
+│   │   └── js/
+│   ├── templates/                  # HTML templates
+│   ├── utils/                      # Utility functions
+│   ├── hooks.py                    # Frappe hooks
+│   ├── modules.txt                 # Module definition
+│   └── patches.txt                 # Database patches
+├── requirements.txt                # Python dependencies
+└── setup.py                        # Package setup
+```
 
 ## Installation
 
@@ -104,115 +137,13 @@ Automate business processes with AI assistance:
 3. Configure actions and conditions
 4. Set up role-based permissions for automation
 
-## Examples
+## Documentation
 
-### Example 1: Sales Order Analysis
+For detailed documentation, please refer to the docs folder:
 
-```
-User: Analyze this Sales Order and suggest next steps.
-Gemini: Based on this Sales Order (#SO-00123):
-- Customer has ordered 10 units of Product A ($5,000 total)
-- Delivery is scheduled for next week
-- This is a repeat customer with good payment history
-
-Suggested next steps:
-1. Confirm inventory availability for Product A
-2. Schedule production if needed
-3. Contact shipping department for delivery planning
-4. Prepare invoice documentation
-```
-
-### Example 2: Purchase Order Workflow
-
-```
-User: Create a workflow for Purchase Order approval.
-Gemini: I've created a workflow for Purchase Order approval:
-
-1. When a new Purchase Order is submitted:
-   - Notify the Purchasing Manager
-   - Create an approval task
-
-2. When approved:
-   - Automatically send to vendor
-   - Create follow-up reminder for 3 days
-
-3. When items are received:
-   - Trigger quality check
-   - Update inventory
-
-Would you like me to implement this workflow?
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **API Key Issues**:
-   - Ensure your Gemini API key is valid and correctly entered
-   - Check API usage limits and billing status
-
-2. **Permission Errors**:
-   - Verify user has proper role permissions
-   - Check role-based security settings
-
-3. **Context Awareness Not Working**:
-   - Ensure context awareness is enabled in settings
-   - Verify the doctype is supported for context
-
-### Logs
-
-Check the following logs for troubleshooting:
-
-- Frappe error logs: `bench error-log`
-- Gemini Audit Log doctype for detailed interaction history
-- Browser console for frontend issues
-
-## Development and Customization
-
-### Directory Structure
-
-```
-erpnext_gemini_integration/
-├── erpnext_gemini_integration/
-│   ├── gemini/              # Core Gemini API integration
-│   ├── api/                 # API endpoints
-│   ├── utils/               # Utility functions
-│   ├── public/              # Frontend assets
-│   │   ├── js/
-│   │   └── css/
-│   ├── templates/           # HTML templates
-│   └── modules/             # Module definitions
-├── setup.py                 # Package setup
-└── requirements.txt         # Dependencies
-```
-
-### Adding Custom Actions
-
-Create custom action handlers:
-
-1. Add a new function in `action_handlers.py`
-2. Register the action using the ActionHandler class
-3. Configure permissions and parameters
-
-Example:
-
-```python
-def handle_custom_action(params):
-    # Your custom action logic here
-    return {"success": True, "message": "Custom action completed"}
-
-# Register the action
-from erpnext_gemini_integration.utils.action_handler import ActionHandler
-action_handler = ActionHandler()
-action_handler.register_action(
-    "custom_action",
-    "Description of custom action",
-    "erpnext_gemini_integration.utils.action_handlers",
-    "handle_custom_action",
-    allowed_roles=["System Manager"],
-    parameters=["param1", "param2"]
-)
-```
+- [Installation Guide](docs/installation_guide.md)
+- [Configuration Guide](docs/configuration_guide.md)
+- [Test Cases](docs/test_cases.md)
 
 ## License
 
@@ -220,4 +151,4 @@ This application is licensed under the MIT License.
 
 ## Support
 
-For support, please contact the developer at [developer@example.com](mailto:developer@example.com).
+For support, please contact the developer at [developer@example.com](mailto:developer@example.com)
