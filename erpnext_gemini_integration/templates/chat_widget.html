@@ -1,0 +1,123 @@
+<!-- Chat Widget Template -->
+<div class="gemini-chat-widget" id="gemini-chat-widget">
+    <!-- Chat Header -->
+    <div class="chat-header">
+        <div class="chat-title">
+            <i class="fa fa-robot"></i>
+            <span>Gemini Assistant</span>
+        </div>
+        <div class="chat-controls">
+            <button class="btn btn-sm btn-default chat-minimize" id="chat-minimize">
+                <i class="fa fa-minus"></i>
+            </button>
+            <button class="btn btn-sm btn-default chat-expand" id="chat-expand">
+                <i class="fa fa-expand"></i>
+            </button>
+            <button class="btn btn-sm btn-default chat-close" id="chat-close">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Chat Body -->
+    <div class="chat-body">
+        <div class="chat-messages" id="chat-messages">
+            <!-- Messages will be added here dynamically -->
+            <div class="chat-message system">
+                <div class="message-content">
+                    <p>Hello! I'm your Gemini AI assistant. How can I help you today?</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chat Footer -->
+    <div class="chat-footer">
+        <div class="chat-input-container">
+            <textarea class="chat-input" id="chat-input" placeholder="Type your message here..." rows="1"></textarea>
+            <div class="chat-actions">
+                <button class="btn btn-sm btn-default chat-attach" id="chat-attach" title="Attach File">
+                    <i class="fa fa-paperclip"></i>
+                </button>
+                <button class="btn btn-primary chat-send" id="chat-send" title="Send Message">
+                    <i class="fa fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+        <div class="chat-file-preview" id="chat-file-preview" style="display: none;">
+            <div class="file-preview-content">
+                <span class="file-name" id="file-name"></span>
+                <button class="btn btn-sm btn-default file-remove" id="file-remove">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="chat-context-info" id="chat-context-info">
+            <!-- Context information will be shown here -->
+        </div>
+    </div>
+    
+    <!-- Chat Launcher (when minimized) -->
+    <div class="chat-launcher" id="chat-launcher" style="display: none;">
+        <button class="btn btn-primary btn-circle">
+            <i class="fa fa-comment"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Conversation List Template -->
+<div class="gemini-conversation-list" id="gemini-conversation-list" style="display: none;">
+    <div class="conversation-header">
+        <div class="conversation-title">
+            <span>Recent Conversations</span>
+        </div>
+        <div class="conversation-controls">
+            <button class="btn btn-sm btn-default conversation-close" id="conversation-close">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+    </div>
+    <div class="conversation-body">
+        <div class="conversation-items" id="conversation-items">
+            <!-- Conversation items will be added here dynamically -->
+        </div>
+    </div>
+    <div class="conversation-footer">
+        <button class="btn btn-default btn-sm" id="new-conversation">
+            <i class="fa fa-plus"></i> New Conversation
+        </button>
+    </div>
+</div>
+
+<!-- Feedback Template -->
+<div class="gemini-feedback-dialog" id="gemini-feedback-dialog" style="display: none;">
+    <div class="feedback-header">
+        <div class="feedback-title">
+            <span>Provide Feedback</span>
+        </div>
+        <div class="feedback-controls">
+            <button class="btn btn-sm btn-default feedback-close" id="feedback-close">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+    </div>
+    <div class="feedback-body">
+        <div class="feedback-message" id="feedback-message">
+            <!-- The message to provide feedback on will be shown here -->
+        </div>
+        <div class="feedback-rating">
+            <button class="btn btn-default feedback-positive" id="feedback-positive">
+                <i class="fa fa-thumbs-up"></i> Helpful
+            </button>
+            <button class="btn btn-default feedback-negative" id="feedback-negative">
+                <i class="fa fa-thumbs-down"></i> Not Helpful
+            </button>
+        </div>
+        <div class="feedback-comments">
+            <textarea class="form-control" id="feedback-comments" placeholder="Additional comments (optional)..." rows="3"></textarea>
+        </div>
+    </div>
+    <div class="feedback-footer">
+        <button class="btn btn-primary" id="submit-feedback">Submit Feedback</button>
+    </div>
+</div>
