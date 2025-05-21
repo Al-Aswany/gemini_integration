@@ -21,6 +21,14 @@ app_include_js = "/assets/erpnext_gemini_integration/js/chat_widget.js"
 web_include_css = "/assets/erpnext_gemini_integration/css/chat_widget.css"
 web_include_js = "/assets/erpnext_gemini_integration/js/chat_widget.js"
 
+# Templates
+# ---------------
+templates = {
+    "includes": {
+        "chat_widget": "templates/chat_widget.html"
+    }
+}
+
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "erpnext_gemini_integration/public/scss/website"
 
