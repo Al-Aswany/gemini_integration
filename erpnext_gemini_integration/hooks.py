@@ -23,11 +23,11 @@ web_include_js = "/assets/erpnext_gemini_integration/js/chat_widget.js"
 
 # Templates
 # ---------------
-templates = {
-    "includes": {
-        "chat_widget": "templates/chat_widget.html"
-    }
-}
+# templates = {
+#     "includes": {
+#         "chat_widget": "templates/chat_widget.html"
+#     }
+# }
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "erpnext_gemini_integration/public/scss/website"
@@ -145,7 +145,11 @@ templates = {
 # override_doctype_dashboards = {
 # 	"Task": "erpnext_gemini_integration.task.get_dashboard_data"
 # }
-
+templates = {
+    "includes": {
+        "chat_widget": "erpnext_gemini_integration/public/templates/chat_widget.html"
+    }
+}
 # exempt linked doctypes from being automatically cancelled
 #
 # auto_cancel_exempted_doctypes = ["Auto Repeat"]

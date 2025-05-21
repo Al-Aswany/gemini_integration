@@ -5,7 +5,8 @@
 import os
 import json
 import frappe
-import google.generativeai as genai
+import requests
+import base64
 from frappe import _
 from frappe.utils import now_datetime
 from ..utils.security import mask_sensitive_data
@@ -25,9 +26,7 @@ class GeminiClient:
         self.api_key = self.get_api_key()
         self.default_model = self.settings.default_model
         self.rate_limit = self.settings.rate_limits
-        
-        # Configure the Gemini API
-        genai.configure(api_key=self.api_key)
+        self.api_base_url = "https://generativelanguage.googleapis.com/v1beta/models"
     
     def get_api_key(self):
         """
@@ -63,42 +62,70 @@ class GeminiClient:
         try:
             # Mask sensitive data in prompt
             masked_prompt = mask_sensitive_data(prompt)
+            print(f"masked_prompt: {masked_prompt}")
             
             # Use default model if not specified
             model_name = model or self.default_model
+            print(f"model_name: {model_name}")
             
-            # Get the model
-            model = genai.GenerativeModel(model_name)
+            # Prepare API URL
+            api_url = f"{self.api_base_url}/{model_name}:generateContent?key={self.api_key}"
+            print(f"API URL prepared")
+            
+            # Prepare request payload
+            payload = {
+                "contents": [{
+                    "parts": [{
+                        "text": masked_prompt
+                    }]
+                }],
+                "generationConfig": {
+                    "temperature": temperature,
+                }
+            }
+            
+            if max_tokens:
+                payload["generationConfig"]["maxOutputTokens"] = max_tokens
+                
+            if safety_settings:
+                payload["safetySettings"] = safety_settings
             
             # Log the request in audit log
             request_id = self._log_request(masked_prompt, model_name)
             
-            # Generate content
-            generation_config = {
-                "temperature": temperature,
-            }
-            
-            if max_tokens:
-                generation_config["max_output_tokens"] = max_tokens
-                
-            response = model.generate_content(
-                masked_prompt,
-                generation_config=generation_config,
-                safety_settings=safety_settings
+            # Make API call
+            response = requests.post(
+                api_url,
+                headers={'Content-Type': 'application/json'},
+                json=payload
             )
             
+            # Check for HTTP errors
+            response.raise_for_status()
+            
+            # Parse response
+            result = response.json()
+            print(f"response: {result}")
+            
+            if 'error' in result:
+                raise GeminiAPIError(result['error'].get('message', 'Unknown error'))
+                
             # Process and log the response
-            processed_response = self._process_response(response)
+            processed_response = self._process_response(result)
             self._log_response(request_id, processed_response)
             
             return processed_response
             
-        except genai.RateLimitError as e:
-            self._log_error(request_id, str(e), "rate_limit")
-            raise GeminiRateLimitError(f"Rate limit exceeded: {str(e)}")
-        except genai.AuthError as e:
-            self._log_error(request_id, str(e), "auth")
-            raise GeminiAuthError(f"Authentication error: {str(e)}")
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                self._log_error(request_id, str(e), "rate_limit")
+                raise GeminiRateLimitError(f"Rate limit exceeded: {str(e)}")
+            elif e.response.status_code in (401, 403):
+                self._log_error(request_id, str(e), "auth")
+                raise GeminiAuthError(f"Authentication error: {str(e)}")
+            else:
+                self._log_error(request_id, str(e), "general")
+                raise GeminiAPIError(f"HTTP error: {str(e)}")
         except Exception as e:
             self._log_error(request_id, str(e), "general")
             raise GeminiAPIError(f"Error generating content: {str(e)}")
@@ -130,48 +157,76 @@ class GeminiClient:
             # Use vision model if not specified
             model_name = model or "gemini-pro-vision"
             
-            # Get the model
-            model = genai.GenerativeModel(model_name)
+            # Prepare API URL
+            api_url = f"{self.api_base_url}/{model_name}:generateContent?key={self.api_key}"
             
             # Prepare content parts
-            content_parts = [masked_prompt]
+            content_parts = [{
+                "parts": [{"text": masked_prompt}]
+            }]
             
             # Add images if provided
             if images and isinstance(images, list):
                 for image_path in images:
                     if os.path.exists(image_path):
-                        image = genai.types.Image.from_file(image_path)
-                        content_parts.append(image)
+                        with open(image_path, "rb") as img_file:
+                            encoded_image = base64.b64encode(img_file.read()).decode('utf-8')
+                            content_parts[0]["parts"].append({
+                                "inlineData": {
+                                    "mimeType": "image/jpeg",
+                                    "data": encoded_image
+                                }
+                            })
             
-            # Log the request in audit log
-            request_id = self._log_request(masked_prompt, model_name, has_images=bool(images))
-            
-            # Generate content
-            generation_config = {
-                "temperature": temperature,
+            # Prepare request payload
+            payload = {
+                "contents": content_parts,
+                "generationConfig": {
+                    "temperature": temperature
+                }
             }
             
             if max_tokens:
-                generation_config["max_output_tokens"] = max_tokens
+                payload["generationConfig"]["maxOutputTokens"] = max_tokens
                 
-            response = model.generate_content(
-                content_parts,
-                generation_config=generation_config,
-                safety_settings=safety_settings
+            if safety_settings:
+                payload["safetySettings"] = safety_settings
+            
+            # Log the request
+            request_id = self._log_request(masked_prompt, model_name, has_images=bool(images))
+            
+            # Make API call
+            response = requests.post(
+                api_url,
+                headers={'Content-Type': 'application/json'},
+                json=payload
             )
             
+            # Check for HTTP errors
+            response.raise_for_status()
+            
+            # Parse response
+            result = response.json()
+            
+            if 'error' in result:
+                raise GeminiAPIError(result['error'].get('message', 'Unknown error'))
+                
             # Process and log the response
-            processed_response = self._process_response(response)
+            processed_response = self._process_response(result)
             self._log_response(request_id, processed_response)
             
             return processed_response
             
-        except genai.RateLimitError as e:
-            self._log_error(request_id, str(e), "rate_limit")
-            raise GeminiRateLimitError(f"Rate limit exceeded: {str(e)}")
-        except genai.AuthError as e:
-            self._log_error(request_id, str(e), "auth")
-            raise GeminiAuthError(f"Authentication error: {str(e)}")
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                self._log_error(request_id, str(e), "rate_limit")
+                raise GeminiRateLimitError(f"Rate limit exceeded: {str(e)}")
+            elif e.response.status_code in (401, 403):
+                self._log_error(request_id, str(e), "auth")
+                raise GeminiAuthError(f"Authentication error: {str(e)}")
+            else:
+                self._log_error(request_id, str(e), "general")
+                raise GeminiAPIError(f"HTTP error: {str(e)}")
         except Exception as e:
             self._log_error(request_id, str(e), "general")
             raise GeminiAPIError(f"Error generating content: {str(e)}")
@@ -187,20 +242,25 @@ class GeminiClient:
             dict: Processed response with text, tokens, and metadata
         """
         try:
-            # Extract text content
-            text = response.text
+            if 'candidates' not in response or not response['candidates']:
+                raise GeminiAPIError("No response candidates found")
+                
+            candidate = response['candidates'][0]
+            content = candidate['content']
             
-            # Extract token usage if available
-            tokens_used = 0
-            if hasattr(response, 'usage') and response.usage:
-                tokens_used = response.usage.total_tokens
+            # Extract text from the response
+            text = content['parts'][0]['text'] if content.get('parts') else ""
+            
+            # Get token usage if available
+            usage = response.get('usageMetadata', {})
+            tokens_used = usage.get('totalTokenCount', 0)
             
             # Build the processed response
             processed_response = {
                 "text": text,
                 "tokens_used": tokens_used,
-                "model": response.model,
-                "finish_reason": getattr(response, "finish_reason", "unknown"),
+                "model": response.get('modelVersion', 'unknown'),
+                "finish_reason": candidate.get('finishReason', 'unknown'),
                 "raw_response": str(response)
             }
             
