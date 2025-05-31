@@ -10,11 +10,14 @@ from ..gemini.client import GeminiClient
 from ..gemini.prompt_builder import PromptBuilder
 from ..gemini.response_parser import ResponseParser
 from ..gemini.exceptions import GeminiAPIError
+from ..gemini.langchain_sql_handler import text_to_sql_with_results, initialize_sql_chain
+from ..utils.visualization import generate_visualization
 
 @frappe.whitelist()
 def send_message(conversation_id=None, message=None, context=None):
     """
     Send a message to Gemini and get a response.
+    If message starts with "QueryDB: ", it's treated as a Text-to-SQL query.
     
     Args:
         conversation_id (str, optional): Existing conversation ID
@@ -22,88 +25,144 @@ def send_message(conversation_id=None, message=None, context=None):
         context (dict, optional): Additional context information
         
     Returns:
-        dict: Response with conversation details and AI message
+        dict: Response with conversation details and AI message or SQL results
     """
     try:
         if not message:
+            return {"success": False, "error": "Message is required"}
+
+        # Initialize LangChain components (especially schema) on first API call if not already done.
+        # This is a simple way to ensure it's ready. A more robust solution might use hooks.py on app load.
+        try:
+            initialize_sql_chain()
+        except Exception as e:
+            frappe.log_error(f"Failed to initialize LangChain SQL Chain: {str(e)}")
+            # Depending on policy, we might want to prevent queries if this fails.
+            # For now, general chat might still work.
+
+        if message.strip().upper().startswith("QUERYDB:"):
+            user_query = message.strip()[len("QUERYDB:"):].strip()
+            if not user_query:
+                return {"success": False, "error": "Query cannot be empty after 'QueryDB: ' prefix."}
+
+            sql_result_data = text_to_sql_with_results(user_query)
+
+            # Log user message (as a query)
+            conversation = get_or_create_conversation(conversation_id, context)
+            conversation_id = conversation.name
+            save_message(conversation_id, "User", f"QueryDB: {user_query}")
+
+
+            if "error" in sql_result_data:
+                # Log assistant error response (containing the SQL error)
+                save_message(conversation_id, "Assistant", f"Error processing your query: {sql_result_data['error']}")
+                return {
+                    "success": False,
+                    "conversation_id": conversation_id,
+                    "response_type": "sql_error",
+                    "error_details": sql_result_data,
+                    "response": f"Sorry, I encountered an error trying to answer your question: {sql_result_data['error']}"
+                }
+            
+            else: # Successfully got SQL results
+                visualization_output = None
+                try:
+                    # Assuming sql_result_data["results"] is List[Dict]
+                    # And sql_result_data["natural_query"] and sql_result_data["generated_sql"] exist
+                    if sql_result_data.get("results"):
+                        visualization_output = generate_visualization(
+                            data=sql_result_data["results"],
+                            natural_query=sql_result_data.get("natural_query", user_query),
+                            generated_sql=sql_result_data.get("generated_sql", "N/A")
+                            # requested_chart_type can be passed if parsed from user_query
+                        )
+                except Exception as vis_ex:
+                    frappe.log_error(f"Error during visualization generation: {str(vis_ex)}")
+                    visualization_output = {"type": "message", "content": "Could not generate visualization."}
+
+                assistant_response_summary = f"Generated SQL: {sql_result_data.get('generated_sql', 'N/A')}\nResults fetched."
+                if sql_result_data.get('has_more_results'):
+                    assistant_response_summary += "\n(Showing a subset of results. More data is available.)"
+                if visualization_output and visualization_output["type"] == "message":
+                    assistant_response_summary += f"\nVisualization: {visualization_output['content']}"
+                elif visualization_output and visualization_output["type"] != "message":
+                        assistant_response_summary += "\nVisualization generated."
+
+                save_message(conversation_id, "Assistant", assistant_response_summary)
+                frappe.db.set_value("Gemini Conversation", conversation_id, "last_updated", frappe.utils.now_datetime())
+
+                return {
+                    "success": True,
+                    "conversation_id": conversation_id,
+                    "response_type": "sql_query_result",
+                    "data": sql_result_data,
+                    "visualization": visualization_output, # Add visualization here
+                    "response": f"I've processed your database query. See data and visualization for details."
+                }
+        else: # Existing general chat logic
+            # Parse context if provided as string
+            if context and isinstance(context, str):
+                try:
+                    context = json.loads(context)
+                except Exception:
+                    context = {} # Default to empty if malformed
+            
+            client = GeminiClient()
+            prompt_builder = PromptBuilder()
+            response_parser = ResponseParser()
+
+            conversation = get_or_create_conversation(conversation_id, context)
+            conversation_id = conversation.name
+
+            history = get_conversation_history(conversation_id)
+
+            current_context = context if context else {}
+            current_context["conversation_history"] = history
+
+            if conversation.context_doctype:
+                current_context["doctype"] = conversation.context_doctype
+            if conversation.context_docname:
+                current_context["docname"] = conversation.context_docname
+
+            prompt = prompt_builder.build_prompt(
+                user_input=message,
+                context=current_context,
+                doctype=conversation.context_doctype,
+                docname=conversation.context_docname
+            )
+
+            save_message(conversation_id, "User", message)
+
+            # API Call to Gemini (non-SQL)
+            gemini_response_data = client.generate_text(prompt) # Assuming this returns a dict like {"text": "...", "tokens_used": ...}
+
+            # The GeminiClient's generate_text returns a dict with a "text" key for the content
+            ai_content = gemini_response_data.get("text", "Sorry, I could not process that.")
+            tokens_used = gemini_response_data.get("tokens_used", 0)
+
+            assistant_message_doc = save_message(conversation_id, "Assistant", ai_content, tokens_used)
+
+            frappe.db.set_value("Gemini Conversation", conversation_id, "last_updated", frappe.utils.now_datetime())
+
             return {
-                "success": False,
-                "error": "Message is required"
+                "success": True,
+                "conversation_id": conversation_id,
+                "message_id": assistant_message_doc.name,
+                "response_type": "chat",
+                "response": ai_content,
+                "tokens_used": tokens_used
             }
-            
-        # Parse context if provided as string
-        if context and isinstance(context, str):
-            try:
-                context = json.loads(context)
-            except Exception:
-                context = {}
-        
-        # Initialize components
-        client = GeminiClient()
-        prompt_builder = PromptBuilder()
-        response_parser = ResponseParser()
-        
-        # Get or create conversation
-        conversation = get_or_create_conversation(conversation_id, context)
-        conversation_id = conversation.name
-        
-        # Get conversation history
-        history = get_conversation_history(conversation_id)
-        
-        # Add conversation history to context
-        if not context:
-            context = {}
-        context["conversation_history"] = history
-        
-        # Add current doctype and docname to context if available
-        if conversation.context_doctype:
-            context["doctype"] = conversation.context_doctype
-            
-        if conversation.context_docname:
-            context["docname"] = conversation.context_docname
-        
-        # Build the prompt
-        prompt = prompt_builder.build_prompt(
-            user_input=message,
-            context=context,
-            doctype=conversation.context_doctype,
-            docname=conversation.context_docname
-        )
-        
-        # Save user message
-        user_message = save_message(conversation_id, "User", message)
-        
-        # Send to Gemini API
-        response = client.generate_text(prompt)
-        
-        # Parse the response
-        parsed_response = response_parser.parse_text_response(response)
-        
-        # Save assistant message
-        assistant_message = save_message(
-            conversation_id, 
-            "Assistant", 
-            parsed_response["content"],
-            response.get("tokens_used", 0)
-        )
-        
-        # Update conversation last_updated
-        frappe.db.set_value("Gemini Conversation", conversation_id, "last_updated", now_datetime())
-        
-        # Return the response
-        return {
-            "success": True,
-            "conversation_id": conversation_id,
-            "message_id": assistant_message.name,
-            "response": parsed_response["content"],
-            "tokens_used": response.get("tokens_used", 0)
-        }
-        
+
     except Exception as e:
-        frappe.log_error(f"Error in send_message: {str(e)}")
+        frappe.log_error(frappe.get_traceback(), f"Error in send_message API: {str(e)}")
+        # Ensure conversation_id is available if an error occurs mid-process
+        # This might not always be set if error is very early.
+        conv_id_for_error = conversation_id if 'conversation_id' in locals() and conversation_id else None
         return {
             "success": False,
-            "error": str(e)
+            "error": str(e),
+            "conversation_id": conv_id_for_error,
+            "response_type": "general_error"
         }
 
 @frappe.whitelist()

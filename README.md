@@ -13,6 +13,48 @@ A comprehensive integration between ERPNext and Google's Gemini AI, providing in
 - **Role-Based Security**: Enterprise-grade security and permissions
 - **Audit Logging**: Comprehensive tracking of all AI interactions
 
+## Text-to-SQL and Data Visualization
+
+This integration now includes powerful Text-to-SQL capabilities and data visualization within the chat interface, powered by LangChain and Google Gemini.
+
+### Asking Database Questions
+
+To ask a question that should be translated into a database query, prefix your message with `QueryDB: `.
+
+For example:
+`QueryDB: Show me the total sales amount for each customer this year.`
+`QueryDB: List items with stock below 50.`
+
+The chatbot will:
+1. Translate your natural language question into an SQL query.
+2. Execute the SQL query safely against the ERPNext database (read-only `SELECT` statements only).
+3. Return the query results in a structured format (JSON/dict).
+4. Log the generated SQL query for auditing purposes.
+
+### Data Visualization
+
+When you ask a database query using the `QueryDB:` prefix, the system will also attempt to generate a visualization of the results:
+
+- **Tables**: For general query results or when other chart types are not suitable, a table view of the data is provided.
+- **Bar Charts**: Typically generated for categorical data comparisons (e.g., sales per customer).
+- **Line Charts**: Often used for time-series data (e.g., sales over months).
+- **Pie Charts**: Used for proportional data with a small number of categories.
+
+The visualization will be embedded directly into the chat response. If a specific chart type doesn't make sense for the data (e.g., asking for a pie chart of textual descriptions), the chatbot will inform you.
+
+**Example Interaction:**
+
+**User:** `QueryDB: What were the monthly sales totals for the last 3 months?`
+
+**Chatbot:**
+*   **Generated SQL:** `SELECT strftime('%Y-%m', posting_date) as sales_month, SUM(grand_total) as total_sales FROM \`tabSales Invoice\` WHERE posting_date >= date('now', '-3 months') GROUP BY sales_month ORDER BY sales_month;`
+*   **Results:** `[{"sales_month": "2024-05", "total_sales": 12000.00}, ...]`
+*   **Visualization:** (An embedded bar chart showing total sales for each of the last 3 months)
+
+### Large Result Sets
+
+If a query returns a large number of rows (e.g., more than 100), the chatbot will display the first 100 rows and indicate that more results are available. You may need to refine your query to get a more specific dataset.
+
 ## App Structure
 
 This app follows the standard Frappe app structure:
@@ -74,6 +116,20 @@ bench restart
    - Navigate to "Gemini Assistant Settings" in ERPNext
    - Enter your Google Gemini API key
    - Configure other settings as needed
+
+### Added Dependencies for Advanced Features (Text-to-SQL and Visualization)
+
+The following Python libraries have been added to support Text-to-SQL and data visualization features. They are included in `requirements.txt` and will be installed with the app or when `pip install -r requirements.txt` is run:
+
+- `langchain`: Core LangChain library.
+- `langchain-experimental`: For experimental LangChain features, including SQLDatabaseChain.
+- `SQLAlchemy`: Used by LangChain for database interaction.
+- `psycopg2-binary`: PostgreSQL driver (adapt if your ERPNext uses MariaDB/MySQL, e.g., `mysqlclient`).
+- `matplotlib`: For generating charts.
+- `plotly`: For generating interactive charts (alternative/complementary to matplotlib).
+- `langchain-google-genai`: Provides LangChain integration with Google's Gemini models.
+
+Ensure your bench environment can install these packages (e.g., system dependencies for `psycopg2-binary` or `matplotlib` might be needed).
 
 ## Configuration
 
